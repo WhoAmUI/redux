@@ -72,7 +72,7 @@
         }
 
 
-        #todoForm {
+        #nameListingForm {
             position: relative;
             width: 100%;
         }
@@ -142,7 +142,7 @@
 
 
     <h1>Name Listing <span><small>(w / Redux)</small></span></h1>
-    <form id="todoForm">
+    <form id="nameListingForm">
         <input type="text" id="nameInput" />
         <button id="addName">Add Name</button>
     </form>
@@ -153,9 +153,9 @@
         import { createStore } from 'https://cdnjs.cloudflare.com/ajax/libs/redux/5.0.1/redux.legacy-esm.min.js';
 
         const Actions = {
-            ADD_TODO: 'ADD_TODO',
-            UPDATE_TODO: 'UPDATE_TODO',
-            REMOVE_TODO: 'REMOVE_TODO',
+            ADD_NAME: 'ADD_NAME',
+            UPDATE_NAME: 'UPDATE_NAME',
+            REMOVE_NAME: 'REMOVE_NAME',
         };
 
         const initialState = {
@@ -164,12 +164,12 @@
 
         const reducer = (state = initialState, action) => {
             switch (action.type) {
-                case Actions.ADD_TODO:
+                case Actions.ADD_NAME:
                     return {
                         ...state,
                         names: [...state.names, action.payload],
                     };
-                case Actions.UPDATE_TODO:
+                case Actions.UPDATE_NAME:
                     const payload = action.payload;
                     state.names[payload.index] = payload.value;
 
@@ -177,7 +177,7 @@
                         ...state,
                         names: state.names
                     }
-                case Actions.REMOVE_TODO:
+                case Actions.REMOVE_NAME:
                     const filteredList = state.names.filter((_, i) => i !== action.payload.index);
 
                     return {
@@ -203,7 +203,7 @@
 
             names.forEach((name, i) => {
                 const template = `<li data-index-number=${i}>
-                                <p class="updateTodo" style="cursor: pointer; display: inline-block; margin-right: 12px">${name}</p> 
+                                <p class="updateName" style="cursor: pointer; display: inline-block; margin-right: 12px">${name}</p> 
                                 <button id="removeBtn">Remove</button>
                             </li>`;
                 listElement += template;
@@ -213,8 +213,8 @@
 
         store.subscribe(renderList);
 
-        // Add Todo Module
-        document.getElementById('todoForm').addEventListener('submit', (e) => {
+        // Add Name Module
+        document.getElementById('nameListingForm').addEventListener('submit', (e) => {
             e.preventDefault();
             const name = nameInput.value.trim();
 
@@ -232,7 +232,7 @@
             if (!name) return alert('Please provide name!');
 
             store.dispatch({
-                type: Actions.ADD_TODO,
+                type: Actions.ADD_NAME,
                 payload: name,
             });
             alert('Name Added Successfully')
@@ -240,7 +240,7 @@
         });
 
 
-        // Update Todo Module
+        // Update Name Module
         const dialog = document.querySelector("dialog");
         const updateDialogInput = document.querySelector(".dialogInput");
 
@@ -249,7 +249,7 @@
             const name = e.target;
             const index = name.closest('li').dataset.indexNumber;
 
-            if (!name.classList.contains('updateTodo')) return;
+            if (!name.classList.contains('updateName')) return;
 
             dialog.showModal();
 
@@ -259,7 +259,7 @@
 
         document.querySelector("#save").addEventListener("click", () => {
             store.dispatch({
-                type: Actions.UPDATE_TODO,
+                type: Actions.UPDATE_NAME,
                 payload: { value: updateDialogInput.value, index: updateDialogInput.dataset.indexNumber }
             });
             alert('Name Updated Successfully')
@@ -271,7 +271,7 @@
         });
 
 
-        // Remove Todo Module
+        // Remove Name Module
         namesList.addEventListener("click", (e) => {
             e.preventDefault();
 
@@ -281,7 +281,7 @@
 
 
             store.dispatch({
-                type: Actions.REMOVE_TODO,
+                type: Actions.REMOVE_NAME,
                 payload: { index: +currentIndex }
             });
 
