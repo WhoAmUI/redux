@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Name Listing Redux</title>
+
+
+    <style>
+        :root {
+            --primary: #1e1e1e;
+            --secondary: #3a3535;
+            --accent: hsl(120, 5%, 22%);
+            --white: #fefefe;
+            --offset: hsla(30, 5%, 82%);
+        }
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+            background-color: var(--primary);
+            display: grid;
+            place-items: center;
+            color: var(--white);
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        h2 {
+            color: var(--white);
+        }
+
+        span {
+            font-size: 12px;
+        }
+
+        dialog {
+            background-color: var(--primary);
+            padding: 24px 30px;
+            border-radius: 8px;
+            border: 1px transparent;
+            outline: 2px solid var(--secondary);
+            outline-offset: 3px;
+        }
+
+        dialog::backdrop {
+            background-color: var(--secondary);
+        }
+
+        #btn-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+        }
+
+        #close {
+            background-color: var(--offset);
+        }
+
+        dialog input {
+            margin-bottom: 24px;
+        }
+
+
+        #todoForm {
+            position: relative;
+            width: 100%;
+        }
+
+        input {
+            outline: 1px transparent;
+            padding: 24px 20px;
+            width: 100%;
+            border-radius: 8px;
+            border: 1px transparent;
+            background-color: var(--secondary);
+            color: var(--white);
+            padding-right: 110px;
+        }
+
+        #addName {
+            position: absolute;
+            right: 2%;
+            bottom: 50%;
+            transform: translateY(50%);
+            box-shadow: 0 0 2px var(--white);
+        }
+
+
+        button {
+            padding: 8px 14px;
+            border-radius: 8px;
+            border: 1px transparent;
+        }
+
+        button:focus-visible {
+            outline: 2px solid var(--white);
+            outline-offset: 3px;
+        }
+
+        #addName {
+            background-color: var(--accent);
+            color: var(--white);
+        }
+
+        #names {
+            width: 100%;
+            padding-left: 0;
+            display: grid;
+            gap: 24px;
+        }
+
+        li {
+            display: flex;
+            justify-content: space-between;
+        }
+    </style>
+</head>
+
+
+<body>
+
+    <!-- modal -->
+    <dialog>
+        <h2>Update Name</h2>
+        <input type="text" class="dialogInput" />
+        <div id="btn-actions">
+            <button autofocus id="save">Save</button>
+            <button id="close">Close</button>
+        </div>
+    </dialog>
+
+
+    <h1>Name Listing <span><small>(w / Redux)</small></span></h1>
+    <form id="todoForm">
+        <input type="text" id="nameInput" />
+        <button id="addName">Add Name</button>
+    </form>
+
+    <ul id="names"></ul>
+
+    <script type="module">
+        import { createStore } from 'https://cdnjs.cloudflare.com/ajax/libs/redux/5.0.1/redux.legacy-esm.min.js';
+
+        const Actions = {
+            ADD_TODO: 'ADD_TODO',
+            UPDATE_TODO: 'UPDATE_TODO',
+            REMOVE_TODO: 'REMOVE_TODO',
+        };
+
+        const initialState = {
+            names: [],
+        };
+
+        const reducer = (state = initialState, action) => {
+            switch (action.type) {
+                case Actions.ADD_TODO:
+                    return {
+                        ...state,
+                        names: [...state.names, action.payload],
+                    };
+                case Actions.UPDATE_TODO:
+                    const payload = action.payload;
+                    state.names[payload.index] = payload.value;
+
+                    return {
+                        ...state,
+                        names: state.names
+                    }
+                case Actions.REMOVE_TODO:
+                    const filteredList = state.names.filter((_, i) => i !== action.payload.index);
+
+                    return {
+                        ...state,
+                        names: filteredList
+                    }
+                default:
+                    return state;
+            }
+        };
+
+        const store = createStore(reducer);
+
+        const namesList = document.getElementById('names');
+        const nameInput = document.getElementById('nameInput');
+        const addNameBtn = document.getElementById('addName');
+
+
+        const renderList = () => {
+            namesList.innerHTML = '';
+            const { names } = store.getState();
+            let listElement = '';
+
+            names.forEach((name, i) => {
+                const template = `<li data-index-number=${i}>
+                                <p class="updateTodo" style="cursor: pointer; display: inline-block; margin-right: 12px">${name}</p> 
+                                <button id="removeBtn">Remove</button>
+                            </li>`;
+                listElement += template;
+                namesList.innerHTML = listElement;
+            });
+        };
+
+        store.subscribe(renderList);
+
+        // Add Todo Module
+        document.getElementById('todoForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const name = nameInput.value.trim();
+
+            if (isDuplicateName(name)) {
+                alert('Name already exists');
+                nameInput.value = ''
+                return
+            }
+
+            if (!isMinMaxChar(name)) {
+                alert('Name must be 3 - 20 characters length')
+                return
+            }
+
+            if (!name) return alert('Please provide name!');
+
+            store.dispatch({
+                type: Actions.ADD_TODO,
+                payload: name,
+            });
+            alert('Name Added Successfully')
+            nameInput.value = '';
+        });
+
+
+        // Update Todo Module
+        const dialog = document.querySelector("dialog");
+        const updateDialogInput = document.querySelector(".dialogInput");
+
+        namesList.addEventListener('click', (e) => {
+            e.preventDefault();
+            const name = e.target;
+            const index = name.closest('li').dataset.indexNumber;
+
+            if (!name.classList.contains('updateTodo')) return;
+
+            dialog.showModal();
+
+            updateDialogInput.value = name.textContent;
+            updateDialogInput.setAttribute('data-index-number', index);
+        });
+
+        document.querySelector("#save").addEventListener("click", () => {
+            store.dispatch({
+                type: Actions.UPDATE_TODO,
+                payload: { value: updateDialogInput.value, index: updateDialogInput.dataset.indexNumber }
+            });
+            alert('Name Updated Successfully')
+            dialog.close();
+        });
+
+        document.querySelector("#close").addEventListener("click", () => {
+            dialog.close();
+        });
+
+
+        // Remove Todo Module
+        namesList.addEventListener("click", (e) => {
+            e.preventDefault();
+
+            if (e.target.id !== 'removeBtn') return;
+
+            const currentIndex = e.target.closest('li').dataset.indexNumber;
+
+
+            store.dispatch({
+                type: Actions.REMOVE_TODO,
+                payload: { index: +currentIndex }
+            });
+
+            alert('Name Deleted Successfully')
+        });
+
+        function isDuplicateName(name) {
+            const { names } = store.getState();
+            return names.includes(name);
+        }
+
+        function isMinMaxChar(name) {
+            return name.length <= 20 && name.length >= 3;
+        }
+
+        renderList();
+
+
+    </script>
+
+</body>
+
+</html>
